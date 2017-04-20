@@ -77,6 +77,39 @@ class ANETcaptions(object):
         for metric in aggregator:
             scores = aggregator[metric]
             self.scores[metric] = sum(scores)/len(scores)
+        self.scores['recall'] = []
+        self.scores['precision'] = []
+        for tiou in self.tious:
+            precision, recall = self.evaluate_detection(tiou)
+            self.scores['recall'].append(recall)
+            self.scores['precision'].append(precision)
+        print self.scores
+
+    def evaluate_detection(self, tiou):
+        recall = [0] * len(self.prediction.keys())
+        precision = [0] * len(self.prediction.keys())
+        for vid_i, vid_id in enumerate(self.prediction):
+            best_recall = 0
+            best_precision = 0
+            for gt in self.ground_truths:
+                refs = gt[vid_id]
+                ref_set_covered = set([])
+                pred_set_covered = set([])
+                num_gt = 0
+                num_pred = 0
+                for pred_i, pred in enumerate(self.prediction[vid_id]):
+                    pred_timestamp = pred['timestamp']
+                    for ref_i, ref_timestamp in enumerate(refs['timestamps']):
+                        if self.iou(pred_timestamp, ref_timestamp) > tiou:
+                            ref_set_covered.add(ref_i)
+                            pred_set_covered.add(pred_i)
+                new_recall = float(len(ref_set_covered)) / len(refs['timestamps'])
+                new_precision = float(len(pred_set_covered)) / pred_i 
+                best_recall = max(best_recall, new_recall)
+                best_precision = max(best_recall, best_precision)
+            recall[vid_i] = best_recall
+            precision[vid_i] = best_precision
+        return sum(recall) / len(recall), sum(precision) / len(recall)
 
     def evaluate_tiou(self, tiou):
         # For every prediction, find it's respective references with tIoU > the passed in argument.
@@ -92,7 +125,10 @@ class ANETcaptions(object):
                     for ref_i, ref_timestamp in enumerate(refs['timestamps']):
                         if self.iou(pred['timestamp'], ref_timestamp) > tiou:
                             matches.append(refs['sentences'][ref_i])
-                gts[unique_index] = [{'caption': v} for v in matches]
+                if len(matches) == 0:
+                    gts[unique_index] = [{'caption': 'abc123!@#'}]
+                else:
+                    gts[unique_index] = [{'caption': v} for v in matches]
                 unique_index += 1
 
         # Set up scorers
@@ -118,6 +154,9 @@ class ANETcaptions(object):
         for scorer, method in scorers:
             if self.verbose:
                 print 'computing %s score...'%(scorer.method())
+            print "GTS:", gts
+            print "RES:", res
+            print '-'*80
             score, scores = scorer.compute_score(gts, res)
             if type(method) == list:
                 for sc, scs, m in zip(score, scores, method):

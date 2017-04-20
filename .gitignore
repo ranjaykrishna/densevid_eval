@@ -1,3 +1,5 @@
 data/*
 *.pyz
 *.json
+*.swp
+*.pyc
