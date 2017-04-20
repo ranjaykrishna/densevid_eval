@@ -5,7 +5,7 @@
 # Written by Ranjay Krishna
 # -------------------------------------------------------- 
 
-mkdir -r data/
+mkdir -p data/
 
 echo '| Downloading the ActivityNet Captions dataset...'
 wget http://cs.stanford.edu/people/ranjaykrishna/densevid/captions.zip 
