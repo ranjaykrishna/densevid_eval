@@ -20,12 +20,14 @@ python evaluate.py -s YOUR_SUBMISSION_FILE.JSON
 Visit [our project page](http://cs.stanford.edu/people/ranjaykrishna/densevid) and read our paper for details.
 
 ## Citation
+```
 @inproceedings{krishna2017dense,
     title={Dense-Captioning Events in Videos},
     author={Krishna, Ranjay and Hata, Kenji and Ren, Frederic and Fei-Fei, Li and Niebles, Juan Carlos},
     booktitle={ArXiv},
     year={2017}
 }
+```
 
 ## License
 
@@ -33,5 +35,7 @@ MIT License copyright Ranjay Krishna
 
 ## Contributions
 Feel free to send pull requests to help write example code, contribute patches, document methods, etc. You can reach me through:
+
 twitter: @RanjayKrishna
+
 email: ranjaykrishna [at] stanford [dot] edu
