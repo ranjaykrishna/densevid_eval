@@ -74,12 +74,12 @@ class ANETcaptions(object):
                 if metric not in self.scores:
                     self.scores[metric] = []
                 self.scores[metric].append(score)
-        self.scores['recall'] = []
-        self.scores['precision'] = []
+        self.scores['Recall'] = []
+        self.scores['Precision'] = []
         for tiou in self.tious:
             precision, recall = self.evaluate_detection(tiou)
-            self.scores['recall'].append(recall)
-            self.scores['precision'].append(precision)
+            self.scores['Recall'].append(recall)
+            self.scores['Precision'].append(precision)
 
     def evaluate_detection(self, tiou):
         recall = [0] * len(self.prediction.keys())
@@ -177,6 +177,14 @@ def main(args):
         for metric in evaluator.scores:
             score = evaluator.scores[metric][i]
             print '| %s: %2.4f'%(metric, 100*score)
+
+    # Print the averages
+    print '-' * 80
+    print "Average across all tIoUs"
+    print '-' * 80
+    for metric in evaluator.scores:
+        score = evaluator.scores[metric]
+        print '| %s: %2.4f'%(metric, 100 * sum(score) / float(len(score)))
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Evaluate the results stored in a submissions file.')
