@@ -67,23 +67,19 @@ class ANETcaptions(object):
 
     def evaluate(self):
         aggregator = {}
+        self.scores = {}
         for tiou in self.tious:
             scores = self.evaluate_tiou(tiou)
             for metric, score in scores.items():
-                if metric not in aggregator:
-                    aggregator[metric] = []
-                aggregator[metric].append(score)
-        self.scores = {}
-        for metric in aggregator:
-            scores = aggregator[metric]
-            self.scores[metric] = sum(scores)/len(scores)
+                if metric not in self.scores:
+                    self.scores[metric] = []
+                self.scores[metric].append(score)
         self.scores['recall'] = []
         self.scores['precision'] = []
         for tiou in self.tious:
             precision, recall = self.evaluate_detection(tiou)
             self.scores['recall'].append(recall)
             self.scores['precision'].append(precision)
-        print self.scores
 
     def evaluate_detection(self, tiou):
         recall = [0] * len(self.prediction.keys())
@@ -154,9 +150,6 @@ class ANETcaptions(object):
         for scorer, method in scorers:
             if self.verbose:
                 print 'computing %s score...'%(scorer.method())
-            print "GTS:", gts
-            print "RES:", res
-            print '-'*80
             score, scores = scorer.compute_score(gts, res)
             if type(method) == list:
                 for sc, scs, m in zip(score, scores, method):
@@ -177,9 +170,13 @@ def main(args):
     evaluator.evaluate()
 
     # Output the results
-    for metric in evaluator.scores:
-        score = evaluator.scores[metric]
-        print '| %s: %2.4f'%(metric, 100*score)
+    for i, tiou in enumerate(args.tious):
+        print '-' * 80
+        print "tIoU: " , tiou
+        print '-' * 80
+        for metric in evaluator.scores:
+            score = evaluator.scores[metric][i]
+            print '| %s: %2.4f'%(metric, 100*score)
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Evaluate the results stored in a submissions file.')
