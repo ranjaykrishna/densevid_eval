@@ -74,12 +74,13 @@ class ANETcaptions(object):
                 if metric not in self.scores:
                     self.scores[metric] = []
                 self.scores[metric].append(score)
-        self.scores['Recall'] = []
-        self.scores['Precision'] = []
-        for tiou in self.tious:
-            precision, recall = self.evaluate_detection(tiou)
-            self.scores['Recall'].append(recall)
-            self.scores['Precision'].append(precision)
+        if self.verbose:
+            self.scores['Recall'] = []
+            self.scores['Precision'] = []
+            for tiou in self.tious:
+                precision, recall = self.evaluate_detection(tiou)
+                self.scores['Recall'].append(recall)
+                self.scores['Precision'].append(precision)
 
     def evaluate_detection(self, tiou):
         recall = [0] * len(self.prediction.keys())
@@ -135,15 +136,18 @@ class ANETcaptions(object):
         gts  = tokenizer.tokenize(gts)
         res = tokenizer.tokenize(res)
 
-        # Set up scorers
+        # Set up scorers, if not verbose, we only use the one we're
+        # testing on: METEOR
         if self.verbose:
             print '| Setting up scorers ...'
-        scorers = [
-            (Bleu(4), ["Bleu_1", "Bleu_2", "Bleu_3", "Bleu_4"]),
-            (Meteor(),"METEOR"),
-            (Rouge(), "ROUGE_L"),
-            (Cider(), "CIDEr")
-        ]
+            scorers = [
+                (Bleu(4), ["Bleu_1", "Bleu_2", "Bleu_3", "Bleu_4"]),
+                (Meteor(),"METEOR"),
+                (Rouge(), "ROUGE_L"),
+                (Cider(), "CIDEr")
+            ]
+        else:
+            scorers = [(Meteor(), "METEOR")]
 
         # Compute scores
         output = {}
@@ -170,13 +174,14 @@ def main(args):
     evaluator.evaluate()
 
     # Output the results
-    for i, tiou in enumerate(args.tious):
-        print '-' * 80
-        print "tIoU: " , tiou
-        print '-' * 80
-        for metric in evaluator.scores:
-            score = evaluator.scores[metric][i]
-            print '| %s: %2.4f'%(metric, 100*score)
+    if args.verbose:
+        for i, tiou in enumerate(args.tious):
+            print '-' * 80
+            print "tIoU: " , tiou
+            print '-' * 80
+            for metric in evaluator.scores:
+                score = evaluator.scores[metric][i]
+                print '| %s: %2.4f'%(metric, 100*score)
 
     # Print the averages
     print '-' * 80
