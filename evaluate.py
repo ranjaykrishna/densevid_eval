@@ -21,8 +21,8 @@ class ANETcaptions(object):
     PREDICTION_FIELDS = ['results', 'version', 'external_data']
 
     def __init__(self, ground_truth_filenames=None, prediction_filename=None,
-                 tious=None, prediction_fields=PREDICTION_FIELDS,
-                 verbose=False):
+                 tious=None, max_proposals=1000,
+                 prediction_fields=PREDICTION_FIELDS, verbose=False):
         # Check that the gt and submission files exist and load them
         if len(tious) == 0:
             raise IOError('Please input a valid tIoU.')
@@ -33,6 +33,7 @@ class ANETcaptions(object):
 
         self.verbose = verbose
         self.tious = tious
+        self.max_proposals = max_proposals
         self.pred_fields = prediction_fields
         self.ground_truths = self.import_ground_truths(ground_truth_filenames)
         self.prediction = self.import_prediction(prediction_filename)
@@ -43,7 +44,11 @@ class ANETcaptions(object):
         submission = json.load(open(prediction_filename))
         if not all([field in submission.keys() for field in self.pred_fields]):
             raise IOError('Please input a valid ground truth file.')
-        return submission['results']
+        # Ensure that every video is limited to the correct maximum number of proposals.
+        results = {}
+        for vid_id in submission['results']:
+            results[vid_id] = submission['results'][vid_id][:self.max_proposals]
+        return results
 
     def import_ground_truths(self, ground_truth_filenames):
         gts = []
@@ -101,7 +106,7 @@ class ANETcaptions(object):
                             ref_set_covered.add(ref_i)
                             pred_set_covered.add(pred_i)
                 new_recall = float(len(ref_set_covered)) / len(refs['timestamps'])
-                new_precision = float(len(pred_set_covered)) / pred_i 
+                new_precision = float(len(pred_set_covered)) / pred_i
                 best_recall = max(best_recall, new_recall)
                 best_precision = max(best_recall, best_precision)
             recall[vid_i] = best_recall
@@ -170,7 +175,9 @@ def main(args):
     # Call coco eval
     evaluator = ANETcaptions(ground_truth_filenames=args.references,
                              prediction_filename=args.submission,
-                             tious=args.tious, verbose=args.verbose)
+                             tious=args.tious,
+                             max_proposals=args.max_proposals_per_video,
+                             verbose=args.verbose)
     evaluator.evaluate()
 
     # Output the results
@@ -199,6 +206,8 @@ if __name__=='__main__':
                         help='reference files with ground truth captions to compare results against. delimited (,) str')
     parser.add_argument('--tious', type=float,  nargs='+', default=[0.3, 0.5, 0.7, 0.9],
                         help='Choose the tIoUs to average over.')
+    parser.add_argument('-ppv', '--max-proposals-per-video', type=int, default=1000,
+                        help='maximum propoasls per video.')
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Print intermediate steps.')
     args = parser.parse_args()
