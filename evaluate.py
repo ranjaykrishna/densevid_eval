@@ -69,6 +69,12 @@ class ANETcaptions(object):
         iou = float(intersection) / (union + 1e-8)
         return iou
 
+    def check_gt_exists(self, vid_id):
+        for gt in self.ground_truths:
+            if vid_id in gt:
+              return True
+        return False
+
     def evaluate(self):
         aggregator = {}
         self.scores = {}
@@ -118,10 +124,14 @@ class ANETcaptions(object):
         gts = {}
         unique_index = 0
         for vid_id in self.prediction:
+            if not self.check_gt_exists(vid_id):
+                continue
             for pred in self.prediction[vid_id]:
                 res[unique_index] = [{'caption': pred['sentence']}]
                 matches = []
                 for gt in self.ground_truths:
+                    if vid_id not in gt:
+                        continue
                     refs = gt[vid_id]
                     for ref_i, ref_timestamp in enumerate(refs['timestamps']):
                         if self.iou(pred['timestamp'], ref_timestamp) > tiou:
