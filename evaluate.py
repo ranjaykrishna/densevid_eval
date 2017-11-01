@@ -140,13 +140,13 @@ class ANETcaptions(object):
                                 ref_set_covered.add(ref_i)
                                 pred_set_covered.add(pred_i)
 
-                    new_precision = float(len(pred_set_covered)) / pred_i 
+                    new_precision = float(len(pred_set_covered)) / (pred_i + 1) 
                     best_precision = max(best_precision, new_precision)
                 new_recall = float(len(ref_set_covered)) / len(refs['timestamps'])
                 best_recall = max(best_recall, new_recall)
             recall[vid_i] = best_recall
             precision[vid_i] = best_precision
-        return sum(recall) / len(recall), sum(precision) / len(precision)
+        return sum(precision) / len(precision), sum(recall) / len(recall)
 
     def evaluate_tiou(self, tiou):
         # This method averages the tIoU precision from METEOR, Bleu, etc. across videos 
@@ -191,6 +191,7 @@ class ANETcaptions(object):
                         if not has_added:
                             cur_res[unique_index] = [{'caption': remove_nonascii(pred['sentence'])}]
                             cur_gts[unique_index] = [{'caption': 'abc123!@#'}]
+                            unique_index += 1
 
         # Each scorer will compute across all videos and take average score
         output = {}
