@@ -153,24 +153,28 @@ class ANETcaptions(object):
         res = {}
         gts = {}
         gt_vid_ids = self.get_gt_vid_ids()
-        for vid_id in gt_vid_ids:
+        
+        unique_index = 0
 
-            res[vid_id] = {}
-            gts[vid_id] = {} 
+        # video id to unique caption ids mapping
+        vid2capid = {}
+        
+        cur_res = {}
+        cur_gts = {}
+        
+        
+        for vid_id in gt_vid_ids:
+            
+            vid2capid[vid_id] = []
 
             # If the video does not have a prediction, then Vwe give it no matches
             # We set it to empty, and use this as a sanity check later on
             if vid_id not in self.prediction:
-                gts[vid_id] = {}
-                res[vid_id] = {}
+                pass
 
             # If we do have a prediction, then we find the scores based on all the
             # valid tIoU overlaps
             else:
-                unique_index = 0
-                cur_res = res[vid_id]
-                cur_gts = gts[vid_id]
-
                 # For each prediction, we look at the tIoU with ground truth
                 for pred in self.prediction[vid_id]:
                     has_added = False
@@ -183,6 +187,7 @@ class ANETcaptions(object):
 
                                 cur_res[unique_index] = [{'caption': remove_nonascii(pred['sentence'])}]
                                 cur_gts[unique_index] = [{'caption': remove_nonascii(gt_captions['sentences'][caption_idx])}]
+                                vid2capid[vid_id].append(unique_index)
                                 unique_index += 1
                                 has_added = True
 
@@ -191,6 +196,7 @@ class ANETcaptions(object):
                         if not has_added:
                             cur_res[unique_index] = [{'caption': remove_nonascii(pred['sentence'])}]
                             cur_gts[unique_index] = [{'caption': 'abc123!@#'}]
+                            vid2capid[vid_id].append(unique_index)
                             unique_index += 1
 
         # Each scorer will compute across all videos and take average score
@@ -201,6 +207,16 @@ class ANETcaptions(object):
             
             # For each video, take all the valid pairs (based from tIoU) and compute the score
             all_scores = {}
+            
+            # call tokenizer here for all predictions and gts
+            tokenize_res = self.tokenizer.tokenize(cur_res)
+            tokenize_gts = self.tokenizer.tokenize(cur_gts)
+            
+            # reshape back
+            for vid in vid2capid.keys():
+                res[vid] = {index:tokenize_res[index] for index in vid2capid[vid]}
+                gts[vid] = {index:tokenize_gts[index] for index in vid2capid[vid]}
+            
             for vid_id in gt_vid_ids:
 
                 if len(res[vid_id]) == 0 or len(gts[vid_id]) == 0:
@@ -209,9 +225,7 @@ class ANETcaptions(object):
                     else:
                         score = 0
                 else:
-                    cur_res = self.tokenizer.tokenize(res[vid_id])
-                    cur_gts = self.tokenizer.tokenize(gts[vid_id])
-                    score, scores = scorer.compute_score(cur_gts, cur_res)
+                    score, scores = scorer.compute_score(gts[vid_id], res[vid_id])
                 all_scores[vid_id] = score
 
             print all_scores.values()
