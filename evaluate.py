@@ -191,13 +191,13 @@ class ANETcaptions(object):
                                 unique_index += 1
                                 has_added = True
 
-                        # If the predicted caption does not overlap with any ground truth,
-                        # we should compare it with garbage
-                        if not has_added:
-                            cur_res[unique_index] = [{'caption': remove_nonascii(pred['sentence'])}]
-                            cur_gts[unique_index] = [{'caption': 'abc123!@#'}]
-                            vid2capid[vid_id].append(unique_index)
-                            unique_index += 1
+                    # If the predicted caption does not overlap with any ground truth,
+                    # we should compare it with garbage
+                    if not has_added:
+                        cur_res[unique_index] = [{'caption': remove_nonascii(pred['sentence'])}]
+                        cur_gts[unique_index] = [{'caption': 'abc123!@#'}]
+                        vid2capid[vid_id].append(unique_index)
+                        unique_index += 1
 
         # Each scorer will compute across all videos and take average score
         output = {}
