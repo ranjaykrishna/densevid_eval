@@ -200,7 +200,7 @@ class ANETcaptions(object):
                     # we should compare it with garbage.
                     if not has_added:
                         cur_res[unique_index] = [{'caption': remove_nonascii(pred['sentence'])}]
-                        cur_gts[unique_index] = [{'caption': random_string(random.randint(10, 20)}]
+                        cur_gts[unique_index] = [{'caption': random_string(random.randint(10, 20))}]
                         vid2capid[vid_id].append(unique_index)
                         unique_index += 1
 
